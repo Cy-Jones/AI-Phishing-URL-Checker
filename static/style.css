@@ -1,0 +1,240 @@
+/* Enterprise State & Glassmorphism Theming */
+
+:root {
+    /* Safe Palette - Translucent */
+    --safe-bg: rgba(240, 253, 244, 0.65);
+    --safe-border: rgba(187, 247, 208, 0.8);
+    --safe-text: #15803d;
+    --safe-text-dark: #14532d;
+    --safe-solid: #22c55e;
+
+    /* Warning Palette - Translucent */
+    --warn-bg: rgba(255, 251, 235, 0.65);
+    --warn-border: rgba(253, 230, 138, 0.8);
+    --warn-text: #b45309;
+    --warn-text-dark: #78350f;
+    --warn-solid: #f59e0b;
+
+    /* Danger Palette - Translucent */
+    --danger-bg: rgba(254, 242, 242, 0.65);
+    --danger-border: rgba(254, 202, 202, 0.8);
+    --danger-text: #b91c1c;
+    --danger-text-dark: #7f1d1d;
+    --danger-solid: #ef4444;
+}
+
+/* =========================================
+   BACKGROUND & GLASS LAYERS
+   ========================================= */
+
+/* The base cloud image */
+.app-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -10;
+    background-image: url('background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* Layer 1: The Main Dashboard Panel */
+.glass-panel {
+    background-color: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+    border-radius: 2rem;
+    padding: 2.5rem;
+}
+
+/* Layer 2: The Inner Cards (Score, Engines, Signals) */
+.glass-card {
+    background-color: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Layer 3: The Search Input */
+.glass-input {
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+    width: 100%;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    font-size: 1.125rem;
+    color: #334155;
+}
+
+.glass-input:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+/* =========================================
+   ANIMATIONS & INTERACTIONS
+   ========================================= */
+#riskBar {
+    transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.5s ease;
+}
+
+.signal-pill {
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.signal-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+
+/* =========================================
+   THEME CLASSES (Applied by JavaScript)
+   ========================================= */
+
+/* --- THEME: SAFE --- */
+.theme-safe#statusBanner {
+    background-color: var(--safe-bg);
+    border-color: var(--safe-border);
+}
+
+.theme-safe #statusHeadline {
+    color: var(--safe-text-dark);
+}
+
+.theme-safe #statusSubtext {
+    color: var(--safe-text);
+}
+
+.theme-safe#scoreText {
+    color: var(--safe-solid);
+}
+
+.theme-safe#riskBar {
+    background-color: var(--safe-solid);
+}
+
+.theme-safe.badge {
+    background-color: var(--safe-bg);
+    border-color: var(--safe-border);
+    color: var(--safe-text);
+}
+
+.theme-safe.signal-pill {
+    background-color: var(--safe-bg);
+    border-color: var(--safe-border);
+    color: var(--safe-text);
+}
+
+.theme-safe .signal-dot {
+    background-color: var(--safe-solid);
+}
+
+/* --- THEME: WARNING --- */
+.theme-warn#statusBanner {
+    background-color: var(--warn-bg);
+    border-color: var(--warn-border);
+    backdrop-filter: blur(8px);
+}
+
+.theme-warn #statusHeadline {
+    color: var(--warn-text-dark);
+}
+
+.theme-warn #statusSubtext {
+    color: var(--warn-text);
+}
+
+.theme-warn#scoreText {
+    color: var(--warn-solid);
+}
+
+.theme-warn#riskBar {
+    background-color: var(--warn-solid);
+}
+
+.theme-warn.badge {
+    background-color: var(--warn-bg);
+    border-color: var(--warn-border);
+    color: var(--warn-text);
+}
+
+.theme-warn.signal-pill {
+    background-color: var(--warn-bg);
+    border-color: var(--warn-border);
+    color: var(--warn-text);
+}
+
+.theme-warn .signal-dot {
+    background-color: var(--warn-solid);
+}
+
+/* --- THEME: DANGER --- */
+.theme-danger#statusBanner {
+    background-color: var(--danger-bg);
+    border-color: var(--danger-border);
+    backdrop-filter: blur(8px);
+}
+
+.theme-danger #statusHeadline {
+    color: var(--danger-text-dark);
+}
+
+.theme-danger #statusSubtext {
+    color: var(--danger-text);
+}
+
+.theme-danger#scoreText {
+    color: var(--danger-solid);
+}
+
+.theme-danger#riskBar {
+    background-color: var(--danger-solid);
+}
+
+.theme-danger.badge {
+    background-color: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+}
+
+.theme-danger.signal-pill {
+    background-color: var(--danger-bg);
+    border-color: var(--danger-border);
+    color: var(--danger-text);
+}
+
+.theme-danger .signal-dot {
+    background-color: var(--danger-solid);
+}

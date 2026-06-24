@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing URL Checker</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['Futura', '"Trebuchet MS"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Link to separated CSS (Cache busted version) -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=stable">
+</head>
+
+<body
+    class="font-sans text-slate-800 antialiased min-h-screen flex flex-col items-center pt-16 px-4 relative overflow-x-hidden">
+
+    <div class="app-background" style="background-image: url('{{ url_for('static', filename='background.jpg') }}');">
+    </div>
+
+    <header class="text-center w-full max-w-5xl mb-10 relative z-10">
+        <h1
+            class="text-4xl md:text-[2.75rem] whitespace-nowrap font-display font-bold tracking-tight text-slate-900 mb-3 drop-shadow-sm">
+            Phishing URL Checker - Is This Link Safe?</h1>
+        <p class="text-slate-700 font-medium text-base drop-shadow-sm">Instantly check any URL or domain against our
+            XGBoost threat intelligence engine.<br>Get a trust score, heuristic analysis, and OSINT verdict - no signup
+            required.</p>
+    </header>
+
+    <main class="glass-panel w-full max-w-5xl mb-20 relative z-10">
+
+        <form id="analyzeForm" class="flex flex-col md:flex-row gap-4 mb-8">
+            <div class="relative flex-1">
+                <input type="url" id="urlInput" required placeholder="https://suspicious-site.com/login"
+                    class="glass-input">
+            </div>
+            <button type="submit" id="submitBtn"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-8 py-4 transition-colors shadow-md shadow-blue-600/20 text-lg whitespace-nowrap">
+                Check URL
+            </button>
+        </form>
+
+        <div id="resultsPanel" class="hidden space-y-6 transition-opacity duration-300">
+
+            <div id="statusBanner" class="rounded-xl p-5 border flex items-center gap-4 transition-colors duration-300">
+                <div id="statusIcon" class="flex-shrink-0"></div>
+                <div>
+                    <h3 id="statusHeadline" class="text-base font-display font-bold">--</h3>
+                    <p id="statusSubtext" class="text-sm mt-0.5">--</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div class="glass-card">
+                    <p class="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-4">Threat Risk Score</p>
+                    <div class="flex flex-col mb-8">
+                        <span id="scoreText"
+                            class="text-7xl font-display font-black tracking-tighter leading-none transition-colors duration-500">0</span>
+                        <span class="text-slate-500 font-medium text-xs mt-2">out of 100</span>
+                    </div>
+                    <div class="w-full bg-slate-200/50 rounded-full h-1.5 overflow-hidden">
+                        <div id="riskBar" class="h-1.5 rounded-full w-0"></div>
+                    </div>
+                </div>
+
+                <div class="glass-card flex flex-col justify-between">
+                    <p class="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-4">Analysis Engines</p>
+                    <ul class="space-y-5">
+                        <li class="flex justify-between items-center border-b border-slate-400/20 pb-3">
+                            <span class="text-slate-700 text-sm font-medium drop-shadow-sm">XGBoost ML Core</span>
+                            <span id="badgeML" class="badge">--</span>
+                        </li>
+
+                        <!-- NEW: TensorFlow Row -->
+                        <li class="flex justify-between items-center border-b border-slate-400/20 pb-3">
+                            <span class="text-slate-700 text-sm font-medium drop-shadow-sm">TensorFlow Sequence
+                                Core</span>
+                            <span id="badgeTF" class="badge">--</span>
+                        </li>
+
+                        <li class="flex justify-between items-center border-b border-slate-400/20 pb-3">
+                            <span class="text-slate-700 text-sm font-medium drop-shadow-sm">Lexical Heuristics</span>
+                            <span id="badgeLexical" class="badge">--</span>
+                        </li>
+                        <li class="flex justify-between items-center pb-1">
+                            <span class="text-slate-700 text-sm font-medium drop-shadow-sm">IP Masquerade Check</span>
+                            <span id="badgeIP" class="badge">--</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <p class="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-4">Intelligence Signals
+                    Detected</p>
+                <div class="flex flex-wrap gap-3">
+                    <div id="pillDomain" class="signal-pill">
+                        <span class="signal-dot w-1.5 h-1.5 rounded-full"></span>
+                        Domain Length: <span id="domainStat" class="font-bold">--</span>
+                    </div>
+                    <div id="pillSlash" class="signal-pill">
+                        <span class="signal-dot w-1.5 h-1.5 rounded-full"></span>
+                        Directory Depth: <span id="slashStat" class="font-bold">--</span>
+                    </div>
+
+                    <div id="pillVT" class="signal-pill">
+                        <span class="signal-dot w-1.5 h-1.5 rounded-full" id="dotVT"></span>
+                        VirusTotal: <span id="vtStat" class="font-bold">--</span>
+                    </div>
+                    <div id="pillAge" class="signal-pill">
+                        <span class="signal-dot w-1.5 h-1.5 rounded-full" id="dotAge"></span>
+                        Domain Age: <span id="ageStat" class="font-bold">--</span>
+                    </div>
+
+                    <div id="pillPayload" class="signal-pill">
+                        <span class="signal-dot w-1.5 h-1.5 rounded-full" id="dotPayload"></span>
+                        Payload: <span id="payloadStat" class="font-bold">--</span>
+                    </div>
+
+                    <div id="ipSignal"
+                        class="hidden border border-red-200/70 bg-red-50/70 text-red-700 text-sm px-3 py-1.5 rounded-md font-medium flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                        Raw IP Address Detected
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-slate-500 text-center mt-2 font-medium">Note: A clean result means no
+                mathematical threat vectors were triggered by the ML model. New phishing techniques appear constantly.
+            </p>
+
+        </div>
+    </main>
+
+    <!-- Link to separated JS (Cache busted version) -->
+    <script src="{{ url_for('static', filename='main.js') }}?v=stable"></script>
+</body>
+
+</html>
