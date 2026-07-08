@@ -138,6 +138,28 @@ def check_heuristics(url, features):
     if parsed.scheme and parsed.scheme.lower() not in ['http', 'https']: return "CRITICAL RISK", 100.0
     if features['has_ip'] == 1: return "CRITICAL RISK", 98.0
     if features['qty_at'] > 0 or features['qty_tilde'] > 0 or features['qty_asterisk'] > 2: return "CRITICAL RISK", 85.0
+    
+    # --- NEW: HARDENED ZERO-DAY RULES ---
+    domain = parsed.netloc.lower() if parsed.netloc else parsed.path.lower()
+    
+    # 1. Brand Spoofing Check (High Risk Keywords)
+    sketchy_keywords = ['login', 'update', 'secure', 'account', 'verify', 'auth', 'support']
+    brands = ['google', 'apple', 'paypal', 'microsoft', 'amazon', 'netflix', 'meta']
+    
+    has_brand = any(b in domain for b in brands)
+    has_sketch = any(k in domain for k in sketchy_keywords)
+    if has_brand and has_sketch: 
+        return "CRITICAL RISK", 95.0
+        
+    # 2. Excessive Hyphens in Domain (Brand masking)
+    if domain.count('-') >= 3: 
+        return "SUSPICIOUS", 75.0
+        
+    # 3. Cheap / High-Abuse TLDs
+    high_risk_tlds = ['.xyz', '.top', '.pw', '.tk', '.cc', '.ru', '.cn']
+    if any(domain.endswith(tld) for tld in high_risk_tlds): 
+        return "SUSPICIOUS", 65.0
+        
     if len(url) > 100: return "SUSPICIOUS", 60.0
     return None, None
 
