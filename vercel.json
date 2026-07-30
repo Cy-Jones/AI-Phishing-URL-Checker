@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/*.py": {
+      "excludeFiles": "{major_project_1*,*.ipynb,*.h5,venv/**,.venv/**}"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
