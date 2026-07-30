@@ -1,7 +1,6 @@
 Flask
 flask-cors
 joblib
-numpy
 pandas
 xgboost
 scikit-learn

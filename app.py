@@ -359,7 +359,7 @@ def analyze():
         # --- TIER 1.5: ENSEMBLE AI (XGBOOST + TENSORFLOW) ---
         xgb_risk_score = 0.0
         if xgb_model:
-            xgb_prob = xgb_model.predict_proba(features_df)[0][1]
+            xgb_prob = xgb_model.predict_proba(features_arr)[0][1]
             xgb_risk_score = float(round(xgb_prob * 100, 2))
         
         lstm_risk_score = 0.0
