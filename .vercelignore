@@ -1,0 +1,7 @@
+major_project_1 (1).ipynb
+*.ipynb
+venv/
+.venv/
+.git/
+.DS_Store
+faq.svg
