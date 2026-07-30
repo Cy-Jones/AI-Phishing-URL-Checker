@@ -2,7 +2,7 @@ Flask
 flask-cors
 joblib
 pandas
-xgboost
+xgboost==1.6.2
 scikit-learn
 requests
 urllib3
