@@ -1,5 +1,6 @@
 major_project_1 (1).ipynb
 *.ipynb
+*.h5
 venv/
 .venv/
 .git/
