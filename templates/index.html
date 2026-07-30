@@ -5,152 +5,385 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phishing URL Checker</title>
+    <!-- Vector SVG Favicon (Commented out) -->
+    <!-- <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}?v=1.0"> -->
+
+    <!-- 3D PNG Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}?v=2.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}?v=2.0">
+    <meta name="description"
+        content="Instantly check any URL against our multi-engine AI threat intelligence system. Get a trust score, heuristic analysis, SSL details, and OSINT verdict.">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        display: ['Futura', '"Trebuchet MS"', 'sans-serif'],
+                        sans: ['Poppins', 'system-ui', 'sans-serif'],
+                        display: ['Poppins', 'system-ui', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
 
-    <!-- Link to separated CSS (Cache busted version) -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=stable">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10.0">
 </head>
 
 <body
-    class="font-sans text-slate-800 antialiased min-h-screen flex flex-col items-center pt-16 px-4 relative overflow-x-hidden">
+    class="font-sans text-slate-800 antialiased min-h-screen flex flex-col items-center pt-10 px-4 relative overflow-x-hidden transition-colors duration-500">
 
     <div class="app-background" style="background-image: url('{{ url_for('static', filename='background.jpg') }}');">
     </div>
 
-    <header class="text-center w-full max-w-5xl mb-10 relative z-10">
-        <h1
-            class="text-4xl md:text-[2.75rem] whitespace-nowrap font-display font-bold tracking-tight text-slate-900 mb-3 drop-shadow-sm">
-            Phishing URL Checker - Is This Link Safe?</h1>
-        <p class="text-slate-700 font-medium text-base drop-shadow-sm">Instantly check any URL or domain against our
-            XGBoost threat intelligence engine.<br>Get a trust score, heuristic analysis, and OSINT verdict - no signup
-            required.</p>
+    <!-- Dark Mode Toggle -->
+    <button id="darkModeToggle" class="dark-toggle" title="Toggle Dark Mode" aria-label="Toggle Dark Mode">
+        <span class="toggle-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
+    </button>
+
+    <!-- Header -->
+    <header class="text-center w-full max-w-7xl mb-8 relative z-10">
+        <div class="flex items-center justify-center gap-3 mb-3">
+            <!-- Vector SVG Icon (Commented out): <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Shield Icon" class="w-10 h-10 md:w-14 md:h-14 inline-block"> -->
+            <img src="{{ url_for('static', filename='favicon.png') }}?v=2.0" alt="Shield Icon" class="w-10 h-10 md:w-14 md:h-14 shrink-0 object-contain drop-shadow-md">
+            <h1 class="text-3xl md:text-5xl lg:text-6xl font-display font-black tracking-tighter leading-[1.1] header-title drop-shadow-sm whitespace-nowrap">
+                Phishing URL Checker
+            </h1>
+        </div>
+        <p class="header-subtitle font-bold text-sm md:text-base drop-shadow-sm max-w-2xl mx-auto">
+            Instantly check any URL against our multi-engine AI threat intelligence system.<br>
+            Ensemble ML • VirusTotal OSINT • SSL Forensics • Live Payload Inspection
+        </p>
     </header>
 
-    <main class="glass-panel w-full max-w-5xl mb-20 relative z-10">
+    <!-- Main Panel -->
+    <main class="glass-panel w-full max-w-7xl mb-10 relative z-10">
 
-        <form id="analyzeForm" class="flex flex-col md:flex-row gap-4 mb-8">
+        <!-- Search Form -->
+        <form id="analyzeForm" class="flex flex-col md:flex-row gap-3 mb-2">
             <div class="relative flex-1">
-                <input type="url" id="urlInput" required placeholder="https://suspicious-site.com/login"
+                <input type="url" id="urlInput" required placeholder="Enter the link or URL to analyze..."
                     class="glass-input">
             </div>
-            <button type="submit" id="submitBtn"
-                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-8 py-4 transition-colors shadow-md shadow-blue-600/20 text-lg whitespace-nowrap">
-                Check URL
+            <button type="submit" id="submitBtn" class="btn-primary text-lg whitespace-nowrap">
+                <span id="btnText">Analyze URL</span>
+                <span id="btnSpinner" class="spinner hidden"></span>
+            </button>
+            <button type="button" id="bulkBtn" class="btn-secondary text-lg whitespace-nowrap flex items-center gap-2" title="Bulk Scan">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                Bulk
             </button>
         </form>
 
-        <div id="resultsPanel" class="hidden space-y-6 transition-opacity duration-300">
+        <!-- Sample URL Chips -->
+        <div class="example-urls flex flex-wrap items-center gap-2 mt-3 px-1 mb-2">
+            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Try examples:</span>
+            <button type="button" class="sample-chip" data-url="https://www.google.com/">
+                www.google.com <span class="chip-tag safe">Clean</span>
+            </button>
+            <button type="button" class="sample-chip" data-url="http://paypal-security-update.xyz/login">
+                paypal-security-update.xyz <span class="chip-tag threat">Threat</span>
+            </button>
+            <button type="button" class="sample-chip" data-url="http://apple.id-auth-verify.com">
+                apple.id-auth-verify.com <span class="chip-tag warn">Suspicious</span>
+            </button>
+        </div>
 
-            <div id="statusBanner" class="rounded-xl p-5 border flex items-center gap-4 transition-colors duration-300">
+        <!-- Scanning Progress Steps -->
+        <div id="scanProgress" class="scan-progress hidden">
+            <div class="scan-step" data-step="1">
+                <span class="step-dot"></span>
+                <span>Extracting Lexical Features</span>
+                <span class="step-check hidden">✓</span>
+            </div>
+            <div class="scan-step" data-step="2">
+                <span class="step-dot"></span>
+                <span>Running AI Ensemble (XGB + TF)</span>
+                <span class="step-check hidden">✓</span>
+            </div>
+            <div class="scan-step" data-step="3">
+                <span class="step-dot"></span>
+                <span>Querying OSINT Intelligence</span>
+                <span class="step-check hidden">✓</span>
+            </div>
+            <div class="scan-step" data-step="4">
+                <span class="step-dot"></span>
+                <span>Inspecting SSL & Redirects</span>
+                <span class="step-check hidden">✓</span>
+            </div>
+            <div class="scan-step" data-step="5">
+                <span class="step-dot"></span>
+                <span>Payload & Screenshot</span>
+                <span class="step-check hidden">✓</span>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div id="resultsPanel" class="hidden space-y-6 transition-opacity duration-300 mt-6">
+
+            <!-- Status Banner -->
+            <div id="statusBanner" class="status-banner rounded-xl p-5 border flex items-center gap-4 transition-colors duration-300">
                 <div id="statusIcon" class="flex-shrink-0"></div>
-                <div>
+                <div class="flex-1">
                     <h3 id="statusHeadline" class="text-base font-display font-bold">--</h3>
                     <p id="statusSubtext" class="text-sm mt-0.5">--</p>
                 </div>
+                <!-- Export Actions -->
+                <div class="export-actions">
+                    <button id="copySummary" class="export-btn" title="Copy Text Summary">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        <span id="copyBtnText">Copy</span>
+                    </button>
+                    <button id="exportJSON" class="export-btn" title="Export JSON">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        JSON
+                    </button>
+                    <button id="exportPDF" class="export-btn" title="Export PDF Report">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        PDF
+                    </button>
+                </div>
             </div>
 
+            <!-- Row 1: Gauge + Engines -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <div class="glass-card">
-                    <p class="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-4">Threat Risk Score</p>
-                    <div class="flex flex-col mb-8">
-                        <span id="scoreText"
-                            class="text-7xl font-display font-black tracking-tighter leading-none transition-colors duration-500">0</span>
-                        <span class="text-slate-500 font-medium text-xs mt-2">out of 100</span>
-                    </div>
-                    <div class="w-full bg-slate-200/50 rounded-full h-1.5 overflow-hidden">
-                        <div id="riskBar" class="h-1.5 rounded-full w-0"></div>
+                <!-- Radial Gauge Card -->
+                <div class="glass-card flex flex-col items-center justify-center">
+                    <p class="card-label self-start">Threat Risk Score</p>
+                    <div class="gauge-container">
+                        <svg viewBox="0 0 120 120" class="gauge-svg">
+                            <defs>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <circle class="gauge-track" cx="60" cy="60" r="52" />
+                            <circle id="gaugeFill" class="gauge-fill" cx="60" cy="60" r="52" filter="url(#glow)" />
+                        </svg>
+                        <div class="gauge-text">
+                            <span id="scoreText" class="gauge-score">0</span>
+                            <span class="gauge-label">/ 100</span>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Analysis Engines Card -->
                 <div class="glass-card flex flex-col justify-between">
-                    <p class="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-4">Analysis Engines</p>
-                    <ul class="space-y-5">
-                        <li class="flex justify-between items-center border-b border-slate-400/20 pb-3">
-                            <span class="text-slate-700 text-sm font-medium drop-shadow-sm">XGBoost ML Core</span>
+                    <p class="card-label">Analysis Engines</p>
+                    <ul class="engine-list">
+                        <li>
+                            <span class="engine-name">XGBoost ML Core</span>
                             <span id="badgeML" class="badge">--</span>
                         </li>
-
-                        <!-- NEW: TensorFlow Row -->
-                        <li class="flex justify-between items-center border-b border-slate-400/20 pb-3">
-                            <span class="text-slate-700 text-sm font-medium drop-shadow-sm">TensorFlow Sequence
-                                Core</span>
+                        <li>
+                            <span class="engine-name">TensorFlow Sequence Core</span>
                             <span id="badgeTF" class="badge">--</span>
                         </li>
-
-                        <li class="flex justify-between items-center border-b border-slate-400/20 pb-3">
-                            <span class="text-slate-700 text-sm font-medium drop-shadow-sm">Lexical Heuristics</span>
+                        <li>
+                            <span class="engine-name">Lexical Heuristics</span>
                             <span id="badgeLexical" class="badge">--</span>
                         </li>
-                        <li class="flex justify-between items-center pb-1">
-                            <span class="text-slate-700 text-sm font-medium drop-shadow-sm">IP Masquerade Check</span>
+                        <li>
+                            <span class="engine-name">IP Masquerade Check</span>
                             <span id="badgeIP" class="badge">--</span>
                         </li>
                     </ul>
                 </div>
             </div>
 
-            <div class="glass-card">
-                <p class="text-[11px] font-bold text-slate-500 tracking-wider uppercase mb-4">Intelligence Signals
-                    Detected</p>
-                <div class="flex flex-wrap gap-3">
-                    <div id="pillDomain" class="signal-pill">
-                        <span class="signal-dot w-1.5 h-1.5 rounded-full"></span>
-                        Domain Length: <span id="domainStat" class="font-bold">--</span>
+            <!-- Row 2: Screenshot + SSL/Redirect -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Screenshot Preview -->
+                <div id="screenshotCard" class="glass-card hidden">
+                    <p class="card-label">Site Preview</p>
+                    <div class="screenshot-frame">
+                        <img id="screenshotImg" alt="Live site screenshot" />
                     </div>
-                    <div id="pillSlash" class="signal-pill">
-                        <span class="signal-dot w-1.5 h-1.5 rounded-full"></span>
-                        Directory Depth: <span id="slashStat" class="font-bold">--</span>
+                </div>
+
+                <!-- Connection Security (SSL + Redirects) -->
+                <div class="glass-card" id="connectionCard">
+                    <p class="card-label">Connection Security</p>
+
+                    <!-- SSL Details -->
+                    <div id="sslSection" class="ssl-section">
+                        <div class="ssl-header">
+                            <span id="sslIcon" class="ssl-icon">🔒</span>
+                            <div>
+                                <span id="sslStatus" class="ssl-status">Analyzing...</span>
+                                <span id="sslProtocol" class="ssl-protocol"></span>
+                            </div>
+                        </div>
+                        <div id="sslDetails" class="ssl-details"></div>
                     </div>
 
-                    <div id="pillVT" class="signal-pill">
-                        <span class="signal-dot w-1.5 h-1.5 rounded-full" id="dotVT"></span>
-                        VirusTotal: <span id="vtStat" class="font-bold">--</span>
-                    </div>
-                    <div id="pillAge" class="signal-pill">
-                        <span class="signal-dot w-1.5 h-1.5 rounded-full" id="dotAge"></span>
-                        Domain Age: <span id="ageStat" class="font-bold">--</span>
-                    </div>
-
-                    <div id="pillPayload" class="signal-pill">
-                        <span class="signal-dot w-1.5 h-1.5 rounded-full" id="dotPayload"></span>
-                        Payload: <span id="payloadStat" class="font-bold">--</span>
-                    </div>
-
-                    <div id="ipSignal"
-                        class="hidden border border-red-200/70 bg-red-50/70 text-red-700 text-sm px-3 py-1.5 rounded-md font-medium flex items-center gap-2">
-                        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                        Raw IP Address Detected
+                    <!-- Redirect Chain -->
+                    <div class="redirect-section">
+                        <p class="section-sublabel">Redirect Chain</p>
+                        <div id="redirectChain" class="redirect-chain"></div>
                     </div>
                 </div>
             </div>
 
-            <p class="text-[11px] text-slate-500 text-center mt-2 font-medium">Note: A clean result means no
-                mathematical threat vectors were triggered by the ML model. New phishing techniques appear constantly.
-            </p>
+            <!-- Threat Breakdown Chart -->
+            <div class="glass-card">
+                <p class="card-label">Threat Breakdown</p>
+                <div id="breakdownChart" class="breakdown-chart"></div>
+            </div>
 
+            <!-- Intelligence Signals -->
+            <div class="glass-card">
+                <p class="card-label">Intelligence Signals Detected</p>
+                <div id="signalsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                </div>
+            </div>
+
+            <p class="disclaimer-text">
+                Note: A clean result means no mathematical threat vectors were triggered by the ML model. New phishing
+                techniques appear constantly.
+            </p>
         </div>
     </main>
 
-    <!-- Link to separated JS (Cache busted version) -->
-    <script src="{{ url_for('static', filename='main.js') }}?v=stable"></script>
+    <!-- Bottom Sections: Recent URLs & FAQ -->
+    <div class="w-full max-w-7xl mx-auto flex flex-col gap-10 mb-20 relative z-10">
+
+        <!-- Recently Checked URLs -->
+        <section class="glass-panel">
+            <h2 class="section-title">Recently Checked URLs</h2>
+            <div class="overflow-x-auto rounded-lg border table-border">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="p-4 text-sm font-semibold">URL</th>
+                            <th class="p-4 text-sm font-semibold w-32">Status</th>
+                            <th class="p-4 text-sm font-semibold w-16 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentUrlsBody">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section class="glass-panel flex flex-col md:flex-row gap-12">
+            <div class="md:w-1/3 shrink-0">
+                <h2 class="section-title leading-tight">Frequently<br>Asked Questions</h2>
+                <img src="{{ url_for('static', filename='faq.svg') }}" alt="FAQ illustration"
+                    class="w-full max-w-xs mt-4 hidden md:block pointer-events-none select-none" draggable="false">
+            </div>
+
+            <div class="md:w-2/3 flex flex-col">
+                <div class="faq-divider">
+                    <button class="faq-btn">
+                        How does the Phishing Link Checker work?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-content hidden">
+                        Our tool uses a multi-tier architecture. It extracts 21 lexical features from the URL and runs them
+                        through an AI Ensemble (XGBoost + TensorFlow LSTM). It then cross-references VirusTotal & Google Safe Browsing
+                        OSINT, inspects SSL certificates, traces redirects, and uses a headless browser to inspect the website's
+                        payload for hidden traps.
+                    </div>
+                </div>
+                <div class="faq-divider">
+                    <button class="faq-btn">
+                        How to identify URL phishing?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-content hidden">
+                        Look for subtle misspellings in the domain (like "g00gle" instead of "google"), excessive use of
+                        hyphens, or IP addresses masking as legitimate domain names. Our ML engine calculates these
+                        anomalies mathematically to flag zero-day threats.
+                    </div>
+                </div>
+                <div class="faq-divider">
+                    <button class="faq-btn">
+                        Is my browsing data saved or shared?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-content hidden">
+                        No. Our system acts as an isolated sandbox proxy. The URL history is strictly saved locally on
+                        your browser using LocalStorage and is never transmitted to an external tracking database.
+                    </div>
+                </div>
+                <div class="faq-divider">
+                    <button class="faq-btn">
+                        What does a "Safe" URL mean?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-content hidden">
+                        A "Safe" rating indicates that the URL passed our mathematical heuristic checks, is not flagged
+                        by the VirusTotal or Google Safe Browsing registries, has a valid SSL certificate, and does not contain
+                        obfuscated credential harvesting forms in its DOM.
+                    </div>
+                </div>
+                <div class="faq-divider">
+                    <button class="faq-btn">
+                        What does the Trust Score mean?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-content hidden">
+                        The Trust Score is a percentage calculated from our 21-feature heuristic analysis combined with
+                        OSINT intelligence. A score below 40 generally indicates a legitimate URL, while anything above
+                        75 is flagged as critical risk. The score accounts for domain age, SSL validity, URL
+                        entropy, redirect chains, and known threat database matches.
+                    </div>
+                </div>
+                <div class="faq-divider">
+                    <button class="faq-btn">
+                        What AI models power this system?
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-content hidden">
+                        We use an ensemble of two AI models: XGBoost for structured tabular feature classification (21 lexical
+                        URL features) and a TensorFlow LSTM neural network for character-level sequence analysis. The final
+                        risk score is determined by max-pooling both predictions, combined with OSINT and payload signals.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Bulk Scan Modal -->
+    <div id="bulkModal" class="modal hidden">
+        <div class="modal-overlay" id="bulkOverlay"></div>
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3 class="text-xl font-display font-bold">Bulk URL Scanner</h3>
+                <button id="bulkClose" class="modal-close">&times;</button>
+            </div>
+            <p class="modal-desc">Paste up to 10 URLs, one per line. Uses ML + VT quick scan.</p>
+            <textarea id="bulkInput" class="modal-textarea" rows="6"
+                placeholder="https://example1.com&#10;https://example2.com&#10;https://example3.com"></textarea>
+            <div class="modal-actions">
+                <button id="bulkCancel" class="btn-secondary">Cancel</button>
+                <button id="bulkSubmit" class="btn-primary">
+                    <span id="bulkBtnText">Scan All</span>
+                    <span id="bulkSpinner" class="spinner hidden"></span>
+                </button>
+            </div>
+            <div id="bulkResults" class="bulk-results hidden"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='main.js') }}?v=8.0"></script>
 </body>
 
 </html>
