@@ -90,12 +90,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleIcon = darkToggle ? darkToggle.querySelector('.toggle-icon') : null;
 
     if (darkToggle && toggleIcon) {
+        const themeColorMeta = document.getElementById('themeColorMeta');
+        const LIGHT_THEME_COLOR = '#d5dff0';
+        const DARK_THEME_COLOR = '#0c1322';
+
+        function updateThemeColor(isDark) {
+            if (themeColorMeta) {
+                themeColorMeta.setAttribute('content', isDark ? DARK_THEME_COLOR : LIGHT_THEME_COLOR);
+            }
+        }
+
         // Load saved preference
         if (localStorage.getItem('darkMode') === 'true') {
             document.documentElement.classList.add('dark');
             toggleIcon.innerHTML = sunSVG;
+            updateThemeColor(true);
         } else {
             toggleIcon.innerHTML = moonSVG;
+            updateThemeColor(false);
         }
 
         darkToggle.addEventListener('click', () => {
@@ -103,22 +115,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const isDark = document.documentElement.classList.contains('dark');
             localStorage.setItem('darkMode', isDark);
             toggleIcon.innerHTML = isDark ? sunSVG : moonSVG;
+            updateThemeColor(isDark);
         });
     }
 
     // ==========================================
     // HELPER: CREATE SIGNAL PILL
     // ==========================================
-    function createPillHTML(label, value, themeClass) {
+    function createPillHTML(label, value, themeClass, isOsint = false) {
         let displayValue = value;
         if (label === 'IP Masquerade') displayValue = value === 1 ? 'Yes' : 'No';
+        const fullText = `${label}: ${displayValue}`;
+        const osintClass = isOsint ? 'signal-pill--osint' : '';
         return `
-            <div class="signal-pill ${themeClass}">
-                <div style="display:flex;align-items:center;gap:0.4rem">
+            <div class="signal-pill ${themeClass} ${osintClass}" title="${fullText}">
+                <div style="display:flex;align-items:center;gap:0.4rem;min-width:0;overflow:hidden">
                     <span class="signal-dot"></span>
-                    <span style="white-space:nowrap">${label}</span>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>
                 </div>
-                <span style="font-weight:700;margin-left:0.5rem">${displayValue}</span>
+                <span style="font-weight:700;margin-left:0.5rem;flex-shrink:0;white-space:nowrap">${displayValue}</span>
             </div>
         `;
     }
@@ -352,8 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return `
                 <tr style="border-bottom:1px solid var(--table-border);transition:background 0.2s" onmouseover="this.style.background='var(--glass-card-bg)'" onmouseout="this.style.background='transparent'">
-                    <td style="padding:0.85rem 1rem;font-size:0.85rem;color:#2563eb;max-width:450px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit">${item.url}</a>
+                    <td style="padding:0.75rem 0.5rem;font-size:0.8rem;color:#2563eb;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                        <a href="${item.url}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit" title="${item.url}">${item.url}</a>
                     </td>
                     <td style="padding:0.85rem 1rem">
                         <span style="padding:0.2rem 0.6rem;border-radius:0.35rem;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;${statusClass}">${displayStatus}</span>
@@ -477,8 +492,41 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const targetUrl = urlInput.value.trim();
+        let targetUrl = urlInput.value.trim();
         if (!targetUrl) return;
+
+        // --- URL Normalization ---
+        // 1. Add https:// if no protocol
+        if (!/^https?:\/\//i.test(targetUrl)) {
+            targetUrl = 'https://' + targetUrl;
+        }
+
+        // 2. Add www. if the domain is bare (e.g. "youtube.com" → "www.youtube.com")
+        //    Skip for: IPs, localhost, domains that already have a subdomain (e.g. "mail.google.com")
+        try {
+            const urlObj = new URL(targetUrl);
+            const hostname = urlObj.hostname;
+            const isIP = /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(':');
+            const isLocalhost = hostname === 'localhost';
+            const dotParts = hostname.split('.');
+            // A bare domain like "youtube.com" has exactly 2 parts; "www.youtube.com" or "mail.google.com" has 3+
+            const isBare = dotParts.length === 2 && !isIP && !isLocalhost;
+
+            if (isBare) {
+                urlObj.hostname = 'www.' + hostname;
+            }
+
+            // 3. Add trailing slash if path is empty
+            if (urlObj.pathname === '/' && !urlObj.href.endsWith('/')) {
+                targetUrl = urlObj.href + '/';
+            } else {
+                targetUrl = urlObj.href;
+            }
+        } catch (_) {
+            // If URL parsing fails, just use what we have
+        }
+
+        urlInput.value = targetUrl;
 
         // UI Loading State
         btnText.textContent = 'Scanning...';
@@ -558,15 +606,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- SIGNALS GRID ---
                 signalsContainer.innerHTML = '';
                 const vtDisplay = isNaN(data.vt_flags) ? data.vt_flags : `${data.vt_flags} Flags`;
-                signalsContainer.innerHTML += createPillHTML('VirusTotal', vtDisplay, getVTTheme(data.vt_flags));
-                signalsContainer.innerHTML += createPillHTML('Domain Age', data.domain_age, getAgeTheme(data.domain_age));
-                signalsContainer.innerHTML += createPillHTML('Payload', data.payload_status, getPayloadTheme(data.payload_status));
+                signalsContainer.innerHTML += createPillHTML('VirusTotal', vtDisplay, getVTTheme(data.vt_flags), true);
+                signalsContainer.innerHTML += createPillHTML('Domain Age', data.domain_age, getAgeTheme(data.domain_age), true);
+                signalsContainer.innerHTML += createPillHTML('Payload', data.payload_status, getPayloadTheme(data.payload_status), true);
 
                 // GSB pill
                 if (data.gsb_flags !== null && data.gsb_flags !== undefined) {
                     const gsbTheme = data.gsb_flags > 0 ? 'theme-danger' : 'theme-safe';
-                    signalsContainer.innerHTML += createPillHTML('Safe Browsing', `${data.gsb_flags} Threats`, gsbTheme);
+                    signalsContainer.innerHTML += createPillHTML('Safe Browsing', `${data.gsb_flags} Threats`, gsbTheme, true);
                 }
+
+                // Divider between OSINT and lexical features
+                signalsContainer.innerHTML += '<div class="signals-divider"></div>';
 
                 // Lexical features
                 if (data.lexical_features) {

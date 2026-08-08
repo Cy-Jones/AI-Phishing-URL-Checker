@@ -98,8 +98,18 @@
 }
 
 body {
+    background-color: #d5dff0;
     color: var(--text-primary);
-    transition: color 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body,
+body.dark-bg {
+    background-color: #0c1322;
+}
+
+html.dark body {
+    background-color: #0c1322;
 }
 
 .header-title {
@@ -786,9 +796,30 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    min-width: 0;
+    overflow: hidden;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* OSINT pills (VirusTotal, Domain Age, Payload, etc.) span wider */
+.signal-pill--osint {
+    grid-column: span 1;
+}
+
+@media (min-width: 640px) {
+    .signal-pill--osint {
+        grid-column: span 1;
+    }
+}
+
+/* Full-width divider between OSINT and Lexical sections */
+.signals-divider {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--glass-card-border), transparent);
+    margin: 0.25rem 0;
 }
 
 .signal-pill:hover {
@@ -1090,39 +1121,341 @@ body {
 }
 
 /* =============================================
-   RESPONSIVE
+   RESPONSIVE — MOBILE NATIVE FEEL
    ============================================= */
+
+/* Tablet */
 @media (max-width: 768px) {
+    body {
+        padding-top: 0.75rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+        padding-bottom: env(safe-area-inset-bottom, 0) !important;
+    }
+
+    /* Dark mode toggle — compact, out of the way */
+    .dark-toggle {
+        top: 0.65rem;
+        right: 0.65rem;
+        width: 36px;
+        height: 36px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .dark-toggle svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Panels — near edge-to-edge, app-like cards */
     .glass-panel {
-        padding: 1.5rem;
-        border-radius: 1.25rem;
+        padding: 1rem !important;
+        border-radius: 1rem !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06) !important;
     }
-    
-    .gauge-container {
-        width: 160px;
-        height: 160px;
+
+    .glass-card {
+        padding: 0.85rem !important;
+        border-radius: 0.75rem !important;
     }
-    
-    .gauge-score {
-        font-size: 2.5rem;
+
+    /* Header — compact, left-aligned feel */
+    .header-title {
+        font-size: 1.4rem !important;
+        line-height: 1.15 !important;
+        white-space: normal !important;
+        letter-spacing: -0.03em;
     }
-    
-    .breakdown-label {
-        min-width: 80px;
-        font-size: 0.7rem;
+
+    .header-subtitle {
+        font-size: 0.72rem !important;
+        line-height: 1.5;
+        padding: 0;
     }
-    
-    .ssl-details {
-        grid-template-columns: 1fr;
+
+    /* Search Form — native search bar feel */
+    #analyzeForm {
+        flex-direction: column;
+        gap: 0.5rem;
     }
-    
-    .export-actions {
+
+    .glass-input {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.9rem;
+        border-radius: 0.65rem;
+    }
+
+    .btn-primary {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 0.65rem;
+    }
+
+    .btn-secondary {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.9rem;
+        border-radius: 0.65rem;
+    }
+
+    /* Sample Chips — horizontal scrollable row */
+    .example-urls {
+        gap: 0.3rem;
         flex-wrap: wrap;
     }
-    
+
+    .sample-chip {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.45rem;
+        border-radius: 0.4rem;
+    }
+
+    .chip-tag {
+        font-size: 0.55rem;
+        padding: 0.02rem 0.25rem;
+    }
+
+    /* Scan progress — compact horizontal pills */
+    .scan-progress {
+        gap: 0.25rem;
+        padding: 0.4rem 0;
+        margin-top: 0.35rem;
+    }
+
+    .scan-step {
+        padding: 0.25rem 0.45rem;
+        font-size: 0.6rem;
+        border-radius: 1rem;
+        gap: 0.25rem;
+    }
+
+    .step-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    /* Gauge — proportional to mobile screen */
+    .gauge-container {
+        width: 140px;
+        height: 140px;
+        margin: 0.25rem auto;
+    }
+
+    .gauge-score {
+        font-size: 2.2rem;
+    }
+
+    .gauge-label {
+        font-size: 0.65rem;
+    }
+
+    /* Status Banner */
+    .status-banner {
+        padding: 0.85rem !important;
+        border-radius: 0.75rem !important;
+    }
+
+    /* Card labels */
+    .card-label {
+        font-size: 0.6rem;
+        margin-bottom: 0.65rem;
+    }
+
+    /* Engine list — tighter rows */
+    .engine-list li {
+        padding: 0.6rem 0;
+    }
+
+    .engine-name {
+        font-size: 0.8rem;
+    }
+
+    .badge {
+        font-size: 0.6rem;
+        padding: 0.2rem 0.55rem;
+    }
+
+    /* SSL details — single column, compact */
+    .ssl-details {
+        grid-template-columns: 1fr !important;
+        gap: 0.35rem;
+    }
+
+    .ssl-detail-item {
+        padding: 0.4rem;
+    }
+
+    .ssl-detail-label {
+        font-size: 0.55rem;
+    }
+
+    .ssl-detail-value {
+        font-size: 0.72rem;
+        word-break: break-all;
+    }
+
+    .ssl-status {
+        font-size: 0.82rem;
+    }
+
+    .ssl-icon {
+        font-size: 1.25rem;
+    }
+
+    /* Breakdown chart — tight bars */
+    .breakdown-row {
+        gap: 0.4rem;
+    }
+
+    .breakdown-label {
+        min-width: 68px !important;
+        font-size: 0.65rem;
+    }
+
+    .breakdown-track {
+        height: 8px;
+    }
+
+    .breakdown-value {
+        min-width: 26px !important;
+        font-size: 0.68rem;
+    }
+
+    /* Signal pills — compact grid items */
+    .signal-pill {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.72rem;
+        border-radius: 0.4rem;
+    }
+
+    .signal-dot {
+        width: 5px;
+        height: 5px;
+    }
+
+    /* Export buttons — inline row */
+    .export-actions {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .export-btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.68rem;
+        padding: 0.4rem 0.35rem;
+        border-radius: 0.4rem;
+    }
+
+    /* Screenshot */
+    .screenshot-frame img {
+        max-height: 200px;
+    }
+
+    /* Redirect chain */
+    .redirect-hop {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.45rem;
+    }
+
+    .redirect-arrow {
+        font-size: 0.7rem;
+    }
+
+    /* Tables — compact data rows */
+    table th {
+        padding: 0.55rem 0.35rem !important;
+        font-size: 0.68rem !important;
+    }
+
+    table td {
+        padding: 0.5rem 0.35rem !important;
+        font-size: 0.72rem !important;
+    }
+
+    .table-border {
+        border-radius: 0.6rem;
+    }
+
+    /* Section title */
+    .section-title {
+        font-size: 1.2rem;
+        margin-bottom: 0.85rem;
+    }
+
+    /* FAQ — tighter accordion */
+    .faq-btn {
+        padding: 0.85rem 0;
+        font-size: 0.85rem;
+    }
+
+    .faq-content {
+        font-size: 0.78rem;
+        padding-bottom: 0.85rem;
+        line-height: 1.6;
+    }
+
+    .faq-icon {
+        font-size: 1.2rem;
+        margin-left: 0.5rem;
+    }
+
+    /* Disclaimer */
+    .disclaimer-text {
+        font-size: 0.6rem;
+    }
+
+    /* Modal */
+    .modal-content {
+        max-height: 90vh;
+    }
+
+    .modal-textarea {
+        font-size: 0.8rem;
+    }
+
+    /* Bulk results */
+    .bulk-url {
+        max-width: 180px;
+    }
+}
+
+/* Extra small phones (iPhone SE, etc) */
+@media (max-width: 380px) {
+    body {
+        padding-left: 0.35rem !important;
+        padding-right: 0.35rem !important;
+    }
+
+    .glass-panel {
+        padding: 0.75rem !important;
+        border-radius: 0.85rem !important;
+    }
+
+    .glass-card {
+        padding: 0.65rem !important;
+    }
+
     .header-title {
-        font-size: 1.75rem !important;
-        white-space: normal !important;
+        font-size: 1.25rem !important;
+    }
+
+    .gauge-container {
+        width: 120px;
+        height: 120px;
+    }
+
+    .gauge-score {
+        font-size: 1.9rem;
+    }
+
+    .breakdown-label {
+        min-width: 60px !important;
+        font-size: 0.6rem;
+    }
+
+    .signal-pill {
+        font-size: 0.68rem;
+        padding: 0.35rem 0.5rem;
     }
 }
 

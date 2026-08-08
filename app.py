@@ -71,66 +71,98 @@ except Exception as e:
     lstm_model = None
     tokenizer = None
 
+# Cache ChromeDriver path at startup (avoids re-downloading on every request)
+print("Caching ChromeDriver path...")
+try:
+    CHROME_DRIVER_PATH = ChromeDriverManager().install()
+    print(f"ChromeDriver cached: {CHROME_DRIVER_PATH}")
+except Exception as e:
+    print(f"WARNING: ChromeDriver cache failed: {e}")
+    CHROME_DRIVER_PATH = None
+
+def _get_chrome_options():
+    """Return pre-configured Chrome options for headless screenshot capture."""
+    chrome_options = Options()
+    for opt in ["--headless", "--disable-gpu", "--no-sandbox", "--window-size=1280x800",
+                 "--ignore-certificate-errors", "--disable-web-security",
+                 "--disable-extensions", "--disable-dev-shm-usage",
+                 "--disable-logging", "--disable-background-networking",
+                 "--disable-default-apps", "--disable-sync",
+                 "--disable-translate", "--mute-audio",
+                 "--no-first-run", "--safebrowsing-disable-auto-update"]:
+        chrome_options.add_argument(opt)
+    chrome_options.add_argument(f'user-agent={CHROME_UA}')
+    return chrome_options
+
 # ==========================================
 # TIER 3: PAYLOAD ANALYSIS + SCREENSHOT
 # ==========================================
 def analyze_payload(url):
-    """Analyze URL payload for threats and capture a live screenshot."""
+    """Analyze URL payload for threats and capture a live screenshot.
+    Also extracts the redirect chain from the initial HTTP request to avoid a duplicate call."""
     flags = []
     screenshot = None
+    redirect_chain = []
     
     try:
-        res = requests.get(url, timeout=8, headers={'User-Agent': CHROME_UA}, verify=False, allow_redirects=True)
+        # Lightweight HTTP fetch for DOM analysis + redirect chain extraction
+        res = requests.get(url, timeout=6, headers={'User-Agent': CHROME_UA}, verify=False, allow_redirects=True)
+        
+        # Extract redirect chain from the same response (avoids a second HTTP call)
+        for r in res.history:
+            p = urlparse(r.url)
+            redirect_chain.append({'url': r.url, 'domain': p.netloc, 'status': r.status_code})
+        p_final = urlparse(res.url)
+        redirect_chain.append({'url': res.url, 'domain': p_final.netloc, 'status': res.status_code})
+        
         soup = BeautifulSoup(res.text, 'html.parser')
         
         if not url.startswith('https'):
             if soup.find_all('input', type='password'):
                 flags.append("Insecure Password Form")
         
-        # Selenium: Screenshot + Dynamic JS Analysis
-        try:
-            chrome_options = Options()
-            for opt in ["--headless", "--disable-gpu", "--no-sandbox", "--window-size=1280x800",
-                         "--ignore-certificate-errors", "--disable-web-security",
-                         "--disable-extensions", "--disable-dev-shm-usage"]:
-                chrome_options.add_argument(opt)
-            chrome_options.add_argument(f'user-agent={CHROME_UA}')
-            
-            service = ChromeService(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            
-            try:
-                driver.set_page_load_timeout(10)
-                driver.get(url)
-                time.sleep(1.5)  # Allow JS to render
-                
-                # Capture screenshot
-                screenshot = driver.get_screenshot_as_base64()
-                print(f"[Tier 3] Screenshot captured ({len(screenshot)} chars)")
-                
-                # Dynamic DOM analysis
-                dynamic_soup = BeautifulSoup(driver.page_source, 'html.parser')
-                if not url.startswith('https') and dynamic_soup.find_all('input', type='password'):
-                    if "Insecure Password Form" not in flags:
-                        flags.append("Insecure Password Form (JS Rendered)")
-                if "contextmenu" in driver.page_source.lower() and "return false" in driver.page_source.lower():
-                    flags.append("Inspection Blocked (No Right-Click)")
-            finally:
-                driver.quit()
-        except Exception as e:
-            print(f"[Tier 3] Selenium failed: {e}")
+        # Check for right-click blocking (informational only, not scored)
+        page_lower = res.text.lower()
+        if "contextmenu" in page_lower and "return false" in page_lower:
+            flags.append("Inspection Blocked (No Right-Click)")
         
-        return {'flags': flags if flags else ["Clean DOM"], 'screenshot': screenshot}
+        # Selenium: Screenshot + Dynamic JS Analysis (using cached driver)
+        if CHROME_DRIVER_PATH:
+            try:
+                service = ChromeService(CHROME_DRIVER_PATH)
+                driver = webdriver.Chrome(service=service, options=_get_chrome_options())
+                
+                try:
+                    driver.set_page_load_timeout(6)
+                    driver.get(url)
+                    time.sleep(0.8)  # Brief wait for JS render
+                    
+                    # Capture screenshot
+                    screenshot = driver.get_screenshot_as_base64()
+                    print(f"[Tier 3] Screenshot captured ({len(screenshot)} chars)")
+                    
+                    # Dynamic DOM analysis for JS-rendered password forms
+                    if not url.startswith('https'):
+                        dynamic_soup = BeautifulSoup(driver.page_source, 'html.parser')
+                        if dynamic_soup.find_all('input', type='password'):
+                            if "Insecure Password Form" not in flags:
+                                flags.append("Insecure Password Form (JS Rendered)")
+                finally:
+                    driver.quit()
+            except Exception as e:
+                print(f"[Tier 3] Selenium failed: {e}")
+        
+        return {'flags': flags if flags else ["Clean DOM"], 'screenshot': screenshot, 'redirect_chain': redirect_chain}
         
     except requests.exceptions.Timeout:
-        return {'flags': ["Timeout (Server non-responsive)"], 'screenshot': None}
+        return {'flags': ["Timeout (Server non-responsive)"], 'screenshot': None, 'redirect_chain': []}
     except requests.exceptions.SSLError:
-        return {'flags': ["Invalid SSL Certificate"], 'screenshot': None}
+        return {'flags': ["Invalid SSL Certificate"], 'screenshot': None, 'redirect_chain': []}
     except requests.exceptions.ConnectionError:
-        return {'flags': ["Connection Refused"], 'screenshot': None}
+        return {'flags': ["Connection Refused"], 'screenshot': None, 'redirect_chain': []}
     except Exception as e:
         print(f"[Tier 3] Payload scan failed: {e}")
-        return {'flags': ["Scan Failed"], 'screenshot': None}
+        return {'flags': ["Scan Failed"], 'screenshot': None, 'redirect_chain': []}
 
 # ==========================================
 # TIER 2: OSINT & INTELLIGENCE
@@ -263,6 +295,8 @@ def check_google_safebrowsing(url):
         print(f"[GSB] Safe Browsing check failed: {e}")
         return None
 
+
+
 # ==========================================
 # TIER 1: HEURISTICS
 # ==========================================
@@ -316,10 +350,13 @@ def home():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
-        data = request.get_json()
-        url = data.get('url')
+        data = request.get_json() or {}
+        url = data.get('url', '').strip()
         
         if not url: return jsonify({'error': 'No URL provided'}), 400
+
+        if not (url.startswith('http://') or url.startswith('https://')):
+            url = 'https://' + url
 
         parsed = urlparse(url)
         domain = parsed.netloc if parsed.netloc else parsed.path
@@ -359,7 +396,7 @@ def analyze():
         # --- TIER 1.5: ENSEMBLE AI (XGBOOST + TENSORFLOW) ---
         xgb_risk_score = 0.0
         if xgb_model:
-            xgb_prob = xgb_model.predict_proba(features_arr)[0][1]
+            xgb_prob = xgb_model.predict_proba(features_df)[0][1]
             xgb_risk_score = float(round(xgb_prob * 100, 2))
         
         lstm_risk_score = 0.0
@@ -376,36 +413,38 @@ def analyze():
 
         # --- TIER 2 & 3: PARALLEL OSINT + PAYLOAD ---
         # Run all network checks in parallel for speed
+        # Note: redirect chain is now extracted from the payload request (same HTTP call)
         vt_flags = 0
         domain_age = -1
         ssl_info = None
         redirect_chain = [{'url': url, 'domain': domain, 'status': 0}]
         gsb_flags = None
-        payload_result = {'flags': ['Scan Failed'], 'screenshot': None}
+        payload_result = {'flags': ['Scan Failed'], 'screenshot': None, 'redirect_chain': []}
         
-        with ThreadPoolExecutor(max_workers=6) as executor:
+        with ThreadPoolExecutor(max_workers=5) as executor:
             vt_future = executor.submit(check_virustotal, url)
             age_future = executor.submit(check_domain_age, domain)
             ssl_future = executor.submit(check_ssl_certificate, domain)
-            redir_future = executor.submit(check_redirect_chain, url)
             gsb_future = executor.submit(check_google_safebrowsing, url)
             payload_future = executor.submit(analyze_payload, url)
             
-            try: vt_flags = vt_future.result(timeout=10) or 0
+            try: vt_flags = vt_future.result(timeout=8) or 0
             except: pass
-            try: domain_age = age_future.result(timeout=10) or -1
+            try: domain_age = age_future.result(timeout=8) or -1
             except: pass
-            try: ssl_info = ssl_future.result(timeout=8)
+            try: ssl_info = ssl_future.result(timeout=6)
             except: pass
-            try: redirect_chain = redir_future.result(timeout=10) or redirect_chain
+            try: gsb_flags = gsb_future.result(timeout=6)
             except: pass
-            try: gsb_flags = gsb_future.result(timeout=8)
-            except: pass
-            try: payload_result = payload_future.result(timeout=20) or payload_result
+            try: payload_result = payload_future.result(timeout=12) or payload_result
             except: pass
         
         payload_flags = payload_result['flags']
         screenshot = payload_result.get('screenshot')
+        # Use redirect chain from the payload request (avoids duplicate HTTP call)
+        payload_redirects = payload_result.get('redirect_chain', [])
+        if payload_redirects:
+            redirect_chain = payload_redirects
         
         # --- SCORE FUSION ---
         final_score = ml_risk_score
@@ -414,13 +453,12 @@ def analyze():
             'virustotal': 0, 'domain_age': 0, 'payload': 0, 'ssl': 0
         }
         
-        # Payload scoring
-        if "Insecure Password Form" in payload_flags or "Insecure Password Form (JS Rendered)" in payload_flags:
+        # Payload scoring (only insecure password forms affect score)
+        if "Insecure Password Form" in payload_flags:
             final_score = max(final_score, 90.0) 
             score_breakdown['payload'] = 90.0
-        elif "Inspection Blocked (No Right-Click)" in payload_flags:
-            final_score = max(final_score, 65.0)
-            score_breakdown['payload'] = 65.0
+        # Note: "Inspection Blocked (No Right-Click)" is informational only — 
+        # legitimate sites like YouTube/Netflix disable right-click on media.
             
         # VirusTotal scoring
         if vt_flags >= 3:
@@ -453,6 +491,8 @@ def analyze():
         if gsb_flags and gsb_flags > 0:
             final_score = max(final_score, 99.0)
             score_breakdown['virustotal'] = max(score_breakdown['virustotal'], 99.0)
+
+
 
         if final_score > 75: status = "CRITICAL RISK"
         elif final_score > 40: status = "SUSPICIOUS"
@@ -541,4 +581,44 @@ def analyze_bulk():
         return jsonify({'error': f'Bulk analysis failed: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    local_lan_ip = '127.0.0.1'
+    try:
+        hostname = socket.gethostname()
+        _, _, addrs = socket.gethostbyname_ex(hostname)
+        lan_addrs = [a for a in addrs if not a.startswith('127.') and not a.startswith('10.2.')]
+        if lan_addrs:
+            local_lan_ip = lan_addrs[0]
+        else:
+            for a in addrs:
+                if not a.startswith('127.'):
+                    local_lan_ip = a
+                    break
+    except Exception:
+        pass
+
+    mobile_url = f"http://{local_lan_ip}:5001"
+    
+    print("\n" + "="*60)
+    print("🚀 PHISHING THREAT INTELLIGENCE PLATFORM ONLINE")
+    print("="*60)
+    print(f"💻 Local Computer Access : http://localhost:5001")
+    print(f"📱 Mobile / Phone Access  : {mobile_url}")
+    print("="*60)
+    print("📱 SCAN THIS QR CODE WITH YOUR PHONE CAMERA TO OPEN THE APP:")
+    print("="*60)
+    try:
+        import qrcode
+        qr = qrcode.QRCode()
+        qr.add_data(mobile_url)
+        qr.make(fit=True)
+        qr.print_ascii(invert=True)
+    except Exception as e:
+        print(f"(QR code generator unavailable: {e})")
+    print("="*60)
+    print("💡 MOBILE TROUBLESHOOTING TIPS:")
+    print(" 1. Ensure phone is on the SAME WI-FI network as this Mac.")
+    print(" 2. Type 'http://' explicitly on mobile browser (do NOT use https://).")
+    print(" 3. If using a VPN (e.g. WARP, Tailscale), temporarily turn it off.")
+    print("="*60 + "\n")
+
+    app.run(host='0.0.0.0', debug=True, port=5001)

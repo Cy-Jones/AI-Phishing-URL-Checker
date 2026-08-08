@@ -3,7 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#d5dff0" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0c1322" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" id="themeColorMeta" content="#d5dff0">
     <title>Phishing URL Checker</title>
     <!-- Vector SVG Favicon (Commented out) -->
     <!-- <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}?v=1.0"> -->
@@ -34,11 +39,11 @@
         }
     </script>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=13.0">
 </head>
 
 <body
-    class="font-sans text-slate-800 antialiased min-h-screen flex flex-col items-center pt-10 px-4 relative overflow-x-hidden transition-colors duration-500">
+    class="font-sans text-slate-800 antialiased min-h-screen flex flex-col items-center pt-6 sm:pt-10 px-3 sm:px-4 relative overflow-x-hidden transition-colors duration-500">
 
     <div class="app-background" style="background-image: url('{{ url_for('static', filename='background.jpg') }}');">
     </div>
@@ -51,50 +56,51 @@
     </button>
 
     <!-- Header -->
-    <header class="text-center w-full max-w-7xl mb-8 relative z-10">
-        <div class="flex items-center justify-center gap-3 mb-3">
-            <!-- Vector SVG Icon (Commented out): <img src="{{ url_for('static', filename='favicon.svg') }}" alt="Shield Icon" class="w-10 h-10 md:w-14 md:h-14 inline-block"> -->
-            <img src="{{ url_for('static', filename='favicon.png') }}?v=2.0" alt="Shield Icon" class="w-10 h-10 md:w-14 md:h-14 shrink-0 object-contain drop-shadow-md">
-            <h1 class="text-3xl md:text-5xl lg:text-6xl font-display font-black tracking-tighter leading-[1.1] header-title drop-shadow-sm whitespace-nowrap">
+    <header class="text-center w-full max-w-7xl mb-4 sm:mb-8 relative z-10">
+        <div class="flex items-center justify-center gap-2 sm:gap-3 mb-1.5 sm:mb-3">
+            <img src="{{ url_for('static', filename='favicon.png') }}?v=2.0" alt="Shield Icon" class="w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14 shrink-0 object-contain drop-shadow-md">
+            <h1 class="text-[1.35rem] sm:text-4xl md:text-5xl lg:text-6xl font-display font-black tracking-tighter leading-[1.15] header-title drop-shadow-sm sm:whitespace-nowrap text-left sm:text-center">
                 Phishing URL Checker
             </h1>
         </div>
-        <p class="header-subtitle font-bold text-sm md:text-base drop-shadow-sm max-w-2xl mx-auto">
-            Instantly check any URL against our multi-engine AI threat intelligence system.<br>
-            Ensemble ML • VirusTotal OSINT • SSL Forensics • Live Payload Inspection
+        <p class="header-subtitle font-semibold text-[0.7rem] sm:text-sm md:text-base drop-shadow-sm max-w-2xl mx-auto leading-relaxed">
+            Instantly check any URL against our multi-engine AI threat intelligence system.<br class="hidden sm:inline">
+            <span class="text-[0.65rem] sm:text-xs opacity-75">Ensemble ML • VirusTotal OSINT • SSL Forensics • Live Payload Inspection</span>
         </p>
     </header>
 
     <!-- Main Panel -->
-    <main class="glass-panel w-full max-w-7xl mb-10 relative z-10">
+    <main class="glass-panel w-full max-w-7xl mb-4 sm:mb-10 relative z-10">
 
         <!-- Search Form -->
-        <form id="analyzeForm" class="flex flex-col md:flex-row gap-3 mb-2">
+        <form id="analyzeForm" class="flex flex-col md:flex-row gap-2 sm:gap-3 mb-2">
             <div class="relative flex-1">
-                <input type="url" id="urlInput" required placeholder="Enter the link or URL to analyze..."
+                <input type="text" id="urlInput" required placeholder="Enter the link or URL to analyze..."
                     class="glass-input">
             </div>
-            <button type="submit" id="submitBtn" class="btn-primary text-lg whitespace-nowrap">
-                <span id="btnText">Analyze URL</span>
-                <span id="btnSpinner" class="spinner hidden"></span>
-            </button>
-            <button type="button" id="bulkBtn" class="btn-secondary text-lg whitespace-nowrap flex items-center gap-2" title="Bulk Scan">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                Bulk
-            </button>
+            <div class="flex gap-2 w-full md:w-auto">
+                <button type="submit" id="submitBtn" class="btn-primary text-base sm:text-lg whitespace-nowrap flex-1 md:flex-initial">
+                    <span id="btnText">Analyze URL</span>
+                    <span id="btnSpinner" class="spinner hidden"></span>
+                </button>
+                <button type="button" id="bulkBtn" class="btn-secondary text-base sm:text-lg whitespace-nowrap flex items-center justify-center gap-2 w-auto px-4" title="Bulk Scan">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    <span class="hidden sm:inline">Bulk</span>
+                </button>
+            </div>
         </form>
 
         <!-- Sample URL Chips -->
-        <div class="example-urls flex flex-wrap items-center gap-2 mt-3 px-1 mb-2">
-            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Try examples:</span>
+        <div class="example-urls flex flex-wrap items-center gap-1.5 sm:gap-2 mt-2 sm:mt-3 px-0.5 mb-1">
+            <span class="text-[0.65rem] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 w-full sm:w-auto">Try examples:</span>
             <button type="button" class="sample-chip" data-url="https://www.google.com/">
-                www.google.com <span class="chip-tag safe">Clean</span>
+                google.com <span class="chip-tag safe">Clean</span>
             </button>
             <button type="button" class="sample-chip" data-url="http://paypal-security-update.xyz/login">
-                paypal-security-update.xyz <span class="chip-tag threat">Threat</span>
+                paypal-security.xyz <span class="chip-tag threat">Threat</span>
             </button>
             <button type="button" class="sample-chip" data-url="http://apple.id-auth-verify.com">
-                apple.id-auth-verify.com <span class="chip-tag warn">Suspicious</span>
+                apple.id-auth.com <span class="chip-tag warn">Suspicious</span>
             </button>
         </div>
 
@@ -131,23 +137,25 @@
         <div id="resultsPanel" class="hidden space-y-6 transition-opacity duration-300 mt-6">
 
             <!-- Status Banner -->
-            <div id="statusBanner" class="status-banner rounded-xl p-5 border flex items-center gap-4 transition-colors duration-300">
-                <div id="statusIcon" class="flex-shrink-0"></div>
-                <div class="flex-1">
-                    <h3 id="statusHeadline" class="text-base font-display font-bold">--</h3>
-                    <p id="statusSubtext" class="text-sm mt-0.5">--</p>
+            <div id="statusBanner" class="status-banner rounded-xl p-4 sm:p-5 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors duration-300">
+                <div class="flex items-center gap-3 w-full sm:w-auto flex-1">
+                    <div id="statusIcon" class="flex-shrink-0"></div>
+                    <div class="flex-1 min-w-0">
+                        <h3 id="statusHeadline" class="text-base font-display font-bold truncate">--</h3>
+                        <p id="statusSubtext" class="text-xs sm:text-sm mt-0.5 leading-snug">--</p>
+                    </div>
                 </div>
                 <!-- Export Actions -->
-                <div class="export-actions">
-                    <button id="copySummary" class="export-btn" title="Copy Text Summary">
+                <div class="export-actions w-full sm:w-auto flex flex-wrap gap-2 justify-end sm:justify-start pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/40 dark:border-slate-700/40">
+                    <button id="copySummary" class="export-btn flex-1 sm:flex-initial justify-center" title="Copy Text Summary">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         <span id="copyBtnText">Copy</span>
                     </button>
-                    <button id="exportJSON" class="export-btn" title="Export JSON">
+                    <button id="exportJSON" class="export-btn flex-1 sm:flex-initial justify-center" title="Export JSON">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         JSON
                     </button>
-                    <button id="exportPDF" class="export-btn" title="Export PDF Report">
+                    <button id="exportPDF" class="export-btn flex-1 sm:flex-initial justify-center" title="Export PDF Report">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                         PDF
                     </button>
@@ -249,7 +257,7 @@
             <!-- Intelligence Signals -->
             <div class="glass-card">
                 <p class="card-label">Intelligence Signals Detected</p>
-                <div id="signalsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <div id="signalsContainer" class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
                 </div>
             </div>
 
@@ -261,7 +269,7 @@
     </main>
 
     <!-- Bottom Sections: Recent URLs & FAQ -->
-    <div class="w-full max-w-7xl mx-auto flex flex-col gap-10 mb-20 relative z-10">
+    <div class="w-full max-w-7xl mx-auto flex flex-col gap-4 sm:gap-10 mb-10 sm:mb-20 relative z-10">
 
         <!-- Recently Checked URLs -->
         <section class="glass-panel">
@@ -282,9 +290,9 @@
         </section>
 
         <!-- FAQ -->
-        <section class="glass-panel flex flex-col md:flex-row gap-12">
+        <section class="glass-panel flex flex-col md:flex-row gap-6 md:gap-12">
             <div class="md:w-1/3 shrink-0">
-                <h2 class="section-title leading-tight">Frequently<br>Asked Questions</h2>
+                <h2 class="section-title leading-tight text-xl sm:text-2xl">Frequently<br>Asked Questions</h2>
                 <img src="{{ url_for('static', filename='faq.svg') }}" alt="FAQ illustration"
                     class="w-full max-w-xs mt-4 hidden md:block pointer-events-none select-none" draggable="false">
             </div>
@@ -357,6 +365,12 @@
                         risk score is determined by max-pooling both predictions, combined with OSINT and payload signals.
                     </div>
                 </div>
+                
+                <!-- Mobile FAQ Illustration (Shown only under FAQ questions on phones) -->
+                <div class="mt-4 flex justify-center md:hidden">
+                    <img src="{{ url_for('static', filename='faq.svg') }}" alt="FAQ illustration"
+                        class="w-full max-w-[160px] opacity-80 pointer-events-none select-none" draggable="false">
+                </div>
             </div>
         </section>
     </div>
@@ -383,7 +397,7 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='main.js') }}?v=8.0"></script>
+    <script src="{{ url_for('static', filename='main.js') }}?v=10.0"></script>
 </body>
 
 </html>
